@@ -3,164 +3,248 @@ from .dealer import Dealer
 from .custom_types import Deck
 from .settings import BLACKJACK_PAYOUT, SURRENDER, HIT_ON_SOFT_17
 from typing import Dict
+from uuid import uuid4
+from .constants import ORIGINAL_HAND
 
 
-def get_bet(player: Player) -> float:
-    bet = 5.00
-    if player.is_human:
-        try:
-            print(f"You have ${player.wallet} to play with")
-            bet = float(input("Set your bet: $"))
-        except ValueError:
-            print(f"That entry wasn't valid. Betting ${bet}.")
-    player.bet(bet)
-    return bet
+class Game:
+    __slots__ = ["player", "dealer", "shoe", "local_pots"]
 
+    def __init__(self, player: Player, dealer: Dealer, shoe: Deck) -> None:
+        self.player: Player = player
+        self.dealer: Dealer = dealer
+        self.shoe: Deck = shoe
+        self.local_pots: Dict[str, float] = {}
 
-def get_insurance(player: Player) -> float:
-    insurance = 0.0
-    if player.is_human:
-        try:
-            insurance = float(input("Set your insurance bet: $"))
-        except ValueError:
-            print(f"That entry wasn't valid. Refusing insurance")
-    player.bet(insurance)
-    return insurance
+    def get_bet(self) -> float:
+        bet = 5.00
+        if self.player.is_human:
+            try:
+                print(f"You have ${self.player.wallet} to play with")
+                bet = float(input("Set your bet: $"))
+            except ValueError:
+                print(f"That entry wasn't valid. Betting ${bet}.")
+        self.player.bet(bet)
+        return bet
 
+    def get_insurance(self) -> float:
+        insurance: float = 0.0
+        if self.player.is_human:
+            try:
+                insurance += float(input("Set your insurance bet: $"))
+            except ValueError:
+                print(f"That entry wasn't valid. Refusing insurance")
+        self.player.bet(insurance)
+        return insurance
 
-def play_split_game(player: Player) -> Dict[str, float]:
-    return {}
+    def get_early_surrender(self) -> str:
+        surrender = "N"
+        if self.player.is_human:
+            surrender = input("Do you wish to surrender? y/N")[0].upper()
+        return surrender
 
+    def play_dealer_and_get_score(self) -> int:
+        while True:
+            dealer_hard_score = self.dealer.get_hard_score()
+            dealer_soft_score = self.dealer.get_soft_score()
 
-def play_dealer_and_get_score(dealer: Dealer, shoe: Deck) -> int:
-    while True:
-        dealer_hard_score = dealer.get_hard_score()
-        dealer_soft_score = dealer.get_soft_score()
+            if dealer_hard_score > 21:
+                return 0
+            if dealer_soft_score > 17:
+                return dealer_soft_score
+            if dealer_soft_score == 17 and not HIT_ON_SOFT_17:
+                return 17
+            if dealer_hard_score >= 17:
+                return dealer_hard_score
 
-        if dealer_soft_score > 17:
-            return dealer_soft_score
-        if dealer_soft_score == 17 and not HIT_ON_SOFT_17:
-            return 17
-        if dealer_hard_score >= 17:
-            return dealer_hard_score
+            self.dealer.deal_card(self.shoe.pop())
 
-        dealer.deal_card(shoe.pop())
+    def print_hands(self, hand_name: str, show_scond_card: bool):
+        if self.player.is_human:
+            hand = self.player.hands[hand_name]
+            print(f"Your cards are: {[c.value + c.suit for c in hand]}")
+            if show_scond_card:
+                print(f"Dealer has {[c.value + c.suit for c in self.dealer.hand]}")
+            else:
+                print(f"Dealer has a {self.dealer.hand[0]}")
 
+    def get_action(self, hand_name: str) -> str:
+        if self.player.is_human:
+            self.print_hands(hand_name, False)
+            options: str = "Would you like to (H)it, (S)tand"
+            if self.player.can_double(hand_name):
+                options += ", (D)ouble"
+            if self.player.can_split(hand_name):
+                options += ", S(P)lit"
+            if self.player.can_surrender(hand_name):
+                options += " Su(R)render"
+            options += ": "
 
-def get_action(player: Player, dealer: Dealer, hand_name: str) -> str:
-    hand = player.hands[hand_name]
-    if player.is_human:
-        print(f"Your cards are: ")
-        for c in hand:
-            print(c.value + c.suit, end=" ")
-        print(f"Dealer has a {dealer.hand[0].value + dealer.hand[0].suit}")
-        options: str = "Would you like to (H)it, (S)tand"
-        if player.can_double(hand_name):
-            options += ", (D)ouble"
-        if player.can_split(hand_name):
-            options += ", S(P)lit"
-        if player.can_surrender(hand_name):
-            options += " Su(R)render"
-        options += ": "
+            option = input(options)[0].upper()
+            if option in ["H", "S"]:
+                return option
+            if option == "D" and self.player.can_double(hand_name):
+                return option
+            if option == "P" and self.player.can_split(hand_name):
+                return option
+            if option == "R" and self.player.can_surrender(hand_name):
+                return option
+            else:
+                print("Invalid selection. Standing")
+                return "S"
 
-        option = input(options)[0].upper()
-        if option in ["H", "S"]:
-            return option
-        if option == "D" and player.can_double(hand_name):
-            return option
-        if option == "P" and player.can_split(hand_name):
-            return option
-        if option == "R" and player.can_surrender(hand_name):
-            return option
-        else:
-            print("Invalid selection. Standing")
-            return "S"
+        return "S"
 
-    return "S"
+    def bust(self, hand_name: str):
+        if self.player.is_human:
+            self.print_hands(hand_name, False)
+            print(f"Busted!")
 
+    def resolve_player_actions(self, hand_name: str, bet: float):
+        winner = None
+        playing = True
+        while playing:
+            action = self.get_action(hand_name)
+            if action == "H":
+                self.player.deal_card(hand_name, self.shoe.pop())
+                if self.player.get_hard_score(hand_name) > 21:
+                    winner = self.dealer
+                    playing = False
+                    self.bust(hand_name)
 
-def play(player: Player, dealer: Dealer, shoe: Deck):  # noqa: C901
-
-    winner = None
-    bet: float = get_bet(player)
-    insurance: float = 0.0
-
-    HAND_NAME = "original_hand"
-    local_pots: Dict[str, float] = {}
-    local_pots[HAND_NAME] = bet
-
-    player.add_hand(HAND_NAME)
-
-    player.deal_card(HAND_NAME, shoe.pop())
-    dealer.deal_card(shoe.pop())
-    player.deal_card(HAND_NAME, shoe.pop())
-    dealer.deal_card(shoe.pop())
-
-    if player.is_human:
-        print(f"Your cards are: ")
-        for c in player.hands[HAND_NAME]:
-            print(c.value + c.suit, end=" ")
-        print(f"Dealer has a {dealer.hand[0].value + dealer.hand[0].suit}")
-
-    if player.has_blackjack(HAND_NAME):
-        winner = Player
-        winnings = bet * (BLACKJACK_PAYOUT + 1)
-        player.payout(winnings)
-        return winner
-
-    if dealer.hand[0].value == "A":
-        if player.is_human and SURRENDER == "early":
-            do_surrender = input("Do you wish to surrender? y/N")[0].upper()
-            if do_surrender == "Y":
-                winner = dealer
-                player.payout(0.5 * bet)
-        else:
-            insurance = get_insurance(player)
-            if dealer.has_blackjack():
-                winner = dealer
-                player.payout(insurance)
-
-    playing = True
-    while playing:
-        action = get_action(player, dealer, HAND_NAME)
-        if action == "H":
-            player.deal_card(HAND_NAME, shoe.pop())
-            if player.get_hard_score(HAND_NAME) > 21:
-                winner = dealer
+            elif action == "D":
+                self.player.bet(bet)
+                bet *= 2
+                self.local_pots[hand_name] = bet
+                self.player.deal_card(hand_name, self.shoe.pop())
+                if self.player.get_hard_score(hand_name) > 21:
+                    winner = self.dealer
+                    self.bust(hand_name)
                 playing = False
 
-        elif action == "D":
-            player.bet(bet)
-            bet *= 2
-            local_pots[HAND_NAME] = bet
-            player.deal_card(HAND_NAME, shoe.pop())
-            if player.get_hard_score(HAND_NAME) > 21:
-                winner = dealer
-            playing = False
+            elif action == "R":
+                winner = self.dealer
+                playing = False
+                self.player.payout(0.5 * bet)
+                if self.player.is_human:
+                    print(f"You surrender. You recieve back ${0.5 * bet}.")
 
-        elif action == "R":
-            winner = dealer
-            playing = False
-            player.payout(0.5 * bet)
+            elif action == "P":
+                self.play_split_game(bet, hand_name)
+                playing = False
 
-        elif action == "P":
-            local_pots.update(play_split_game(player))
-            playing = False
+            if action == "S":
+                playing = False
 
-        if action == "S":
-            playing = False
+        return winner
 
-    if winner is None:
-        dealer_score = play_dealer_and_get_score(dealer, shoe)
+    def resolve_payouts(self):
+        dealer_score = self.play_dealer_and_get_score()
         player_scores: Dict[str, int] = {}
-        for hand in player.hands.keys():
-            best_score = max(player.get_hard_score[hand], player.get_soft_score[hand])
+        for hand in self.player.hands.keys():
+            best_score = self.player.get_soft_score(hand)
             if best_score > 21:
                 best_score = -1
             player_scores[hand] = best_score
 
         for hand, score in player_scores.items():
+            if self.player.is_human:
+                self.print_hands(hand, True)
+
             if dealer_score == score:
-                player.payout(local_pots[hand])
+                self.player.payout(self.local_pots[hand])
+                if self.player.is_human:
+                    print("PUSH!")
             elif dealer_score < score:
-                player.payout(2 * local_pots[hand])
+                self.player.payout(2 * self.local_pots[hand])
+                if self.player.is_human:
+                    print(f"You win ${self.local_pots[hand]}")
+            else:
+                if self.player.is_human:
+                    print("You lose! Better luck next time!")
+
+    def resolve_player_blackjack(self, bet: float):
+        winner = Player
+        winnings = bet * (BLACKJACK_PAYOUT + 1)
+        self.player.payout(winnings)
+        if self.player.is_human:
+            print(f"You got blackjack! You win ${bet * BLACKJACK_PAYOUT}")
+        return winner
+
+    def resolve_insurance_scenario(self, bet: float):
+        winner = None
+        if SURRENDER == "early":
+            do_surrender = self.get_early_surrender()
+            if do_surrender == "Y":
+                winner = self.dealer
+                self.player.payout(0.5 * bet)
+                if self.player.is_human:
+                    print(f"You surrender. You recieve back ${0.5 * bet}.")
+                return winner
+        insurance = self.get_insurance()
+        if self.dealer.has_blackjack():
+            winner = self.dealer
+            self.player.payout(2 * insurance)
+            if self.player.is_human:
+                print(
+                    "Dealer has Blackjack."
+                    + f"You get ${insurance} from your insurance bet"
+                )
+        return winner
+
+    def play_split_game(self, bet: float, hand_name: str) -> None:
+        self.player.bet(bet)
+
+        card1 = self.player.hands[hand_name][0]
+        card2 = self.player.hands[hand_name][1]
+        self.player.hands.pop(hand_name)
+        self.local_pots.pop(hand_name)
+        hand1_name = "Split " + str(uuid4())
+        hand2_name = "Split " + str(uuid4())
+        self.player.hands[hand1_name] = [card1]
+        self.player.hands[hand2_name] = [card2]
+
+        self.local_pots[hand1_name] = bet
+        self.local_pots[hand2_name] = bet
+
+        self.player.deal_card(hand1_name, self.shoe.pop())
+        self.player.deal_card(hand2_name, self.shoe.pop())
+
+        if self.player.is_human:
+            self.print_hands(hand1_name, False)
+            self.print_hands(hand2_name, False)
+
+        if card1.value != "A":
+            self.resolve_player_actions(hand1_name, bet)
+        if card2.value != "A":
+            self.resolve_player_actions(hand2_name, bet)
+
+    def play(self):
+
+        winner = None
+        bet: float = self.get_bet()
+
+        self.local_pots[ORIGINAL_HAND] = bet
+
+        self.player.add_hand(ORIGINAL_HAND)
+
+        self.player.deal_card(ORIGINAL_HAND, self.shoe.pop())
+        self.dealer.deal_card(self.shoe.pop())
+        self.player.deal_card(ORIGINAL_HAND, self.shoe.pop())
+        self.dealer.deal_card(self.shoe.pop())
+
+        if self.player.is_human:
+            self.print_hands(ORIGINAL_HAND, False)
+
+        if self.player.has_blackjack(ORIGINAL_HAND):
+            winner = self.resolve_player_blackjack(bet)
+
+        if self.dealer.hand[0].value == "A":
+            winner = self.resolve_insurance_scenario(bet)
+
+        if winner is None:
+            winner = self.resolve_player_actions(ORIGINAL_HAND, bet)
+
+        if winner is None:
+            self.resolve_payouts()
+

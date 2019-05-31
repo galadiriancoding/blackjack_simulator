@@ -1,7 +1,7 @@
 from .card import Card
 from typing import List, Dict
-from .constants import POINTS
-from .settings import SURRENDER
+from .constants import POINTS, ORIGINAL_HAND
+from .settings import SURRENDER, SPLIT_LIMIT
 
 
 class Player:
@@ -60,10 +60,15 @@ class Player:
         return (
             len(self.hands[hand_name]) == 2
             and self.hands[hand_name][0].value == self.hands[hand_name][1].value
+            and (SPLIT_LIMIT == 0 or len(self.hands <= SPLIT_LIMIT))
         )
 
     def can_double(self, hand_name: str) -> bool:
         return len(self.hands[hand_name]) == 2
 
     def can_surrender(self, hand_name: str) -> bool:
-        return len(self.hands[hand_name]) == 2 and SURRENDER != "None"
+        return (
+            len(self.hands[hand_name]) == 2
+            and SURRENDER != "None"
+            and hand_name == ORIGINAL_HAND
+        )

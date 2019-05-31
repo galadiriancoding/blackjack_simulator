@@ -32,3 +32,4 @@ def discard_all_cards(player: Player, dealer: Dealer, discard_pile: Deck) -> Dec
     for hand in player.hands.values():
         discard_pile.extend(hand)
     player.clear_hands()
+    return discard_pile
