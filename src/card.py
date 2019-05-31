@@ -1,6 +1,6 @@
 class Card:
 
-    __slots__ = ["suit", "value", "face_up"]
+    __slots__ = ["suit", "value"]
 
     def __init__(self, suit, value):
         self.suit = suit

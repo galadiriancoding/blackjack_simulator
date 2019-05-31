@@ -1,10 +1,17 @@
-from .player import Player
-from .dealer import Dealer
-from .custom_types import Deck
-from .settings import BLACKJACK_PAYOUT, SURRENDER, HIT_ON_SOFT_17
-from typing import Dict
+from typing import Any, Dict
 from uuid import uuid4
+
 from .constants import ORIGINAL_HAND
+from .custom_types import Deck
+from .dealer import Dealer
+from .player import Player
+from .settings import (
+    BLACKJACK_PAYOUT,
+    DEFAULT_BET,
+    DEFAULT_INSURANCE,
+    HIT_ON_SOFT_17,
+    SURRENDER,
+)
 
 
 class Game:
@@ -17,7 +24,7 @@ class Game:
         self.local_pots: Dict[str, float] = {}
 
     def get_bet(self) -> float:
-        bet = 5.00
+        bet = DEFAULT_BET
         if self.player.is_human:
             try:
                 print(f"You have ${self.player.wallet} to play with")
@@ -28,7 +35,7 @@ class Game:
         return bet
 
     def get_insurance(self) -> float:
-        insurance: float = 0.0
+        insurance: float = DEFAULT_INSURANCE
         if self.player.is_human:
             try:
                 insurance += float(input("Set your insurance bet: $"))
@@ -59,7 +66,7 @@ class Game:
 
             self.dealer.deal_card(self.shoe.pop())
 
-    def print_hands(self, hand_name: str, show_scond_card: bool):
+    def print_hands(self, hand_name: str, show_scond_card: bool) -> None:
         if self.player.is_human:
             hand = self.player.hands[hand_name]
             print(f"Your cards are: {[c.value + c.suit for c in hand]}")
@@ -95,13 +102,13 @@ class Game:
 
         return "S"
 
-    def bust(self, hand_name: str):
+    def bust(self, hand_name: str) -> None:
         if self.player.is_human:
             self.print_hands(hand_name, False)
-            print(f"Busted!")
+            print("Busted!")
 
-    def resolve_player_actions(self, hand_name: str, bet: float):
-        winner = None
+    def resolve_player_actions(self, hand_name: str, bet: float) -> Any:
+        winner: Any = None
         playing = True
         while playing:
             action = self.get_action(hand_name)
@@ -138,7 +145,7 @@ class Game:
 
         return winner
 
-    def resolve_payouts(self):
+    def resolve_payouts(self) -> None:
         dealer_score = self.play_dealer_and_get_score()
         player_scores: Dict[str, int] = {}
         for hand in self.player.hands.keys():
@@ -163,16 +170,16 @@ class Game:
                 if self.player.is_human:
                     print("You lose! Better luck next time!")
 
-    def resolve_player_blackjack(self, bet: float):
-        winner = Player
+    def resolve_player_blackjack(self, bet: float) -> Any:
+        winner: Any = Player
         winnings = bet * (BLACKJACK_PAYOUT + 1)
         self.player.payout(winnings)
         if self.player.is_human:
             print(f"You got blackjack! You win ${bet * BLACKJACK_PAYOUT}")
         return winner
 
-    def resolve_insurance_scenario(self, bet: float):
-        winner = None
+    def resolve_insurance_scenario(self, bet: float) -> Any:
+        winner: Any = None
         if SURRENDER == "early":
             do_surrender = self.get_early_surrender()
             if do_surrender == "Y":
@@ -183,13 +190,13 @@ class Game:
                 return winner
         insurance = self.get_insurance()
         if self.dealer.has_blackjack():
+            self.print_hands(ORIGINAL_HAND, True)
             winner = self.dealer
             self.player.payout(2 * insurance)
             if self.player.is_human:
-                print(
-                    "Dealer has Blackjack."
-                    + f"You get ${insurance} from your insurance bet"
-                )
+                print("Dealer has Blackjack.")
+                if insurance > 0.0:
+                    print(f"You get ${insurance} from your insurance bet")
         return winner
 
     def play_split_game(self, bet: float, hand_name: str) -> None:
@@ -219,7 +226,7 @@ class Game:
         if card2.value != "A":
             self.resolve_player_actions(hand2_name, bet)
 
-    def play(self):
+    def play(self) -> None:
 
         winner = None
         bet: float = self.get_bet()
@@ -247,4 +254,3 @@ class Game:
 
         if winner is None:
             self.resolve_payouts()
-

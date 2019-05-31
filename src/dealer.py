@@ -1,5 +1,6 @@
-from .card import Card
 from typing import List
+
+from .card import Card
 from .constants import POINTS
 
 

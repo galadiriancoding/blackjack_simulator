@@ -1,7 +1,8 @@
+from typing import Dict, List
+
 from .card import Card
-from typing import List, Dict
-from .constants import POINTS, ORIGINAL_HAND
-from .settings import SURRENDER, SPLIT_LIMIT
+from .constants import ORIGINAL_HAND, POINTS
+from .settings import DOUBLE_AFTER_SPLIT, SPLIT_LIMIT, SURRENDER
 
 
 class Player:
@@ -35,7 +36,7 @@ class Player:
 
     def has_soft_score(self, hand_name: str) -> bool:
         hard_score = self.get_hard_score(hand_name)
-        return self.contains_ace(hand_name) and hard_score + 10 < 21
+        return self.contains_ace(hand_name) and hard_score + 10 <= 21
 
     def get_soft_score(self, hand_name: str) -> int:
         hard_score = self.get_hard_score(hand_name)
@@ -64,7 +65,9 @@ class Player:
         )
 
     def can_double(self, hand_name: str) -> bool:
-        return len(self.hands[hand_name]) == 2
+        return len(self.hands[hand_name]) == 2 and (
+            DOUBLE_AFTER_SPLIT or hand_name == ORIGINAL_HAND
+        )
 
     def can_surrender(self, hand_name: str) -> bool:
         return (

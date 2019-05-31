@@ -1,13 +1,14 @@
-from .constants import SUITS, VALUES
-from .card import Card
-from .custom_types import Deck
 from random import shuffle
-from .settings import DECK_COUNT
-from .player import Player
+
+from .card import Card
+from .constants import SUITS, VALUES
+from .custom_types import Deck
 from .dealer import Dealer
+from .player import Player
+from .settings import DECK_COUNT
 
 
-def build__single_deck() -> Deck:
+def build_single_deck() -> Deck:
     deck: Deck = []
     for suit in SUITS:
         for value in VALUES:
@@ -20,7 +21,7 @@ def build__single_deck() -> Deck:
 def build_shoe() -> Deck:
     shoe: Deck = []
     for _ in range(DECK_COUNT):
-        deck = build__single_deck()
+        deck = build_single_deck()
         shoe.extend(deck)
     shuffle(shoe)
     return shoe

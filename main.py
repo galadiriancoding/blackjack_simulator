@@ -1,8 +1,8 @@
-from src.player import Player
-from src.dealer import Dealer
-from src.setup import build_shoe, discard_all_cards
-from src.game import Game
 from src.custom_types import Deck
+from src.dealer import Dealer
+from src.game import Game
+from src.player import Player
+from src.setup import build_shoe, discard_all_cards
 
 
 def main():

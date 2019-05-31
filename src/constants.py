@@ -1,7 +1,7 @@
 from typing import List, Dict
 
 SUITS: List[str] = ["S", "H", "D", "C"]
-VALUES: List[str] = ["2", "3", "4", "5", "6", "7", "8", "T", "J", "Q", "K", "A"]
+VALUES: List[str] = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"]
 
 POINTS: Dict[str, int] = {
     "2": 2,
