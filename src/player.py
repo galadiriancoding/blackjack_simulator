@@ -9,7 +9,7 @@ class Player:
     __slots__ = ["hands", "is_human", "wallet"]
 
     def __init__(self, is_human: bool, wallet: float):
-        self.hands: Dict[str, List[Card]] = {}
+        self.hands: Dict[str, Hand] = {}
         self.is_human: bool = is_human
         self.wallet = wallet
 

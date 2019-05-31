@@ -27,10 +27,10 @@ class Game:
         bet = DEFAULT_BET
         if self.player.is_human:
             try:
-                print(f"You have ${self.player.wallet} to play with")
+                print(f"You have ${self.player.wallet:.2f} to play with")
                 bet = float(input("Set your bet: $"))
             except ValueError:
-                print(f"That entry wasn't valid. Betting ${bet}.")
+                print(f"That entry wasn't valid. Betting ${bet:.2f}.")
         self.player.bet(bet)
         return bet
 
@@ -40,7 +40,7 @@ class Game:
             try:
                 insurance += float(input("Set your insurance bet: $"))
             except ValueError:
-                print(f"That entry wasn't valid. Refusing insurance")
+                print("That entry wasn't valid. Refusing insurance")
         self.player.bet(insurance)
         return insurance
 
@@ -134,7 +134,7 @@ class Game:
                 playing = False
                 self.player.payout(0.5 * bet)
                 if self.player.is_human:
-                    print(f"You surrender. You recieve back ${0.5 * bet}.")
+                    print(f"You surrender. You recieve back ${(0.5 * bet):.2f}.")
 
             elif action == "P":
                 self.play_split_game(bet, hand_name)
@@ -165,7 +165,7 @@ class Game:
             elif dealer_score < score:
                 self.player.payout(2 * self.local_pots[hand])
                 if self.player.is_human:
-                    print(f"You win ${self.local_pots[hand]}")
+                    print(f"You win ${self.local_pots[hand]:.2f}")
             else:
                 if self.player.is_human:
                     print("You lose! Better luck next time!")
@@ -175,7 +175,7 @@ class Game:
         winnings = bet * (BLACKJACK_PAYOUT + 1)
         self.player.payout(winnings)
         if self.player.is_human:
-            print(f"You got blackjack! You win ${bet * BLACKJACK_PAYOUT}")
+            print(f"You got blackjack! You win ${(bet * BLACKJACK_PAYOUT):.2f}")
         return winner
 
     def resolve_insurance_scenario(self, bet: float) -> Any:
@@ -186,7 +186,7 @@ class Game:
                 winner = self.dealer
                 self.player.payout(0.5 * bet)
                 if self.player.is_human:
-                    print(f"You surrender. You recieve back ${0.5 * bet}.")
+                    print(f"You surrender. You recieve back ${(0.5 * bet):.2f}.")
                 return winner
         insurance = self.get_insurance()
         if self.dealer.has_blackjack():
@@ -196,7 +196,7 @@ class Game:
             if self.player.is_human:
                 print("Dealer has Blackjack.")
                 if insurance > 0.0:
-                    print(f"You get ${insurance} from your insurance bet")
+                    print(f"You get ${insurance:.2f} from your insurance bet")
         return winner
 
     def play_split_game(self, bet: float, hand_name: str) -> None:

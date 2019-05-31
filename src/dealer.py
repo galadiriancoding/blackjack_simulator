@@ -2,14 +2,14 @@ from typing import List
 
 from .card import Card
 from .constants import POINTS
+from .custom_types import Hand
 
 
 class Dealer:
-    __slots__ = ["hand", "hidden_second_card"]
+    __slots__ = ["hand"]
 
     def __init__(self):
-        self.hand: List[Card] = []
-        self.hidden_second_card: bool = True
+        self.hand: Hand = []
 
     def deal_card(self, card: Card) -> None:
         self.hand.append(card)
@@ -28,7 +28,7 @@ class Dealer:
 
     def has_soft_score(self) -> bool:
         hard_score = self.get_hard_score()
-        return self.contains_ace() and hard_score + 10 < 21
+        return self.contains_ace() and hard_score + 10 <= 21
 
     def get_soft_score(self) -> int:
         hard_score = self.get_hard_score()
