@@ -5,13 +5,8 @@ from .constants import ORIGINAL_HAND
 from .custom_types import Deck
 from .dealer import Dealer
 from .player import Player
-from .settings import (
-    BLACKJACK_PAYOUT,
-    DEFAULT_BET,
-    DEFAULT_INSURANCE,
-    HIT_ON_SOFT_17,
-    SURRENDER,
-)
+from .settings import (BLACKJACK_PAYOUT, DEFAULT_BET, DEFAULT_INSURANCE,
+                       HIT_ON_SOFT_17, SURRENDER, TABLE_MAXIMUM, TABLE_MINIMUM)
 
 
 class Game:
@@ -28,7 +23,20 @@ class Game:
         if self.player.is_human:
             try:
                 print(f"You have ${self.player.wallet:.2f} to play with")
-                bet = float(input("Set your bet: $"))
+                bet = abs(float(input("Set your bet: $")))
+                if bet > self.player.wallet:
+                    print(f"Bet was larger than your wallet. Betting whole wallet.")
+                    bet = self.player.wallet
+                if bet > TABLE_MAXIMUM:
+                    print(
+                        "Bet was larger than table maximum. "
+                        + f"Betting ${TABLE_MAXIMUM:.2f}"
+                    )
+                if bet < TABLE_MINIMUM:
+                    print(
+                        "Bet was smaller than table minimum. "
+                        + f"Betting ${min(TABLE_MINIMUM, self.player.wallet):.2f}"
+                    )
             except ValueError:
                 print(f"That entry wasn't valid. Betting ${bet:.2f}.")
         self.player.bet(bet)
