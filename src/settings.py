@@ -1,0 +1,5 @@
+DECK_COUNT: int = 8
+BLACKJACK_PAYOUT: float = 3.0 / 2.0
+SURRENDER = "late"
+SURRENDER_AFTER_SPLIT = False
+HIT_ON_SOFT_17 = True
