@@ -1,7 +1,8 @@
-from typing import Dict, List
+from typing import Dict
 
 from .card import Card
 from .constants import ORIGINAL_HAND, POINTS
+from .custom_types import Hand
 from .settings import DOUBLE_AFTER_SPLIT, SPLIT_LIMIT, SURRENDER
 
 
@@ -61,7 +62,7 @@ class Player:
         return (
             len(self.hands[hand_name]) == 2
             and self.hands[hand_name][0].value == self.hands[hand_name][1].value
-            and (SPLIT_LIMIT == 0 or len(self.hands <= SPLIT_LIMIT))
+            and (SPLIT_LIMIT == 0 or len(self.hands) <= SPLIT_LIMIT)
         )
 
     def can_double(self, hand_name: str) -> bool:

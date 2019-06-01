@@ -1,25 +1,39 @@
-from typing import Any, Dict
+from typing import Dict
 from uuid import uuid4
 
 from .constants import ORIGINAL_HAND
 from .custom_types import Deck
 from .dealer import Dealer
 from .player import Player
-from .settings import (BLACKJACK_PAYOUT, DEFAULT_BET, DEFAULT_INSURANCE,
-                       HIT_ON_SOFT_17, SURRENDER, TABLE_MAXIMUM, TABLE_MINIMUM)
+from .settings import (
+    BLACKJACK_PAYOUT,
+    DEFAULT_BET,
+    DEFAULT_INSURANCE,
+    HIT_ON_SOFT_17,
+    SURRENDER,
+    TABLE_MAXIMUM,
+    TABLE_MINIMUM,
+)
 
 
 class Game:
-    __slots__ = ["player", "dealer", "shoe", "local_pots"]
+    __slots__ = ["player", "dealer", "shoe", "pots"]
 
     def __init__(self, player: Player, dealer: Dealer, shoe: Deck) -> None:
         self.player: Player = player
         self.dealer: Dealer = dealer
         self.shoe: Deck = shoe
-        self.local_pots: Dict[str, float] = {}
+        self.pots: Dict[str, float] = {}
 
     def get_bet(self) -> float:
         bet = DEFAULT_BET
+        if self.player.wallet < TABLE_MINIMUM:
+            if self.player.is_human:
+                print(
+                    f"I'm sorry you need at leats ${TABLE_MINIMUM:.2f} to play"
+                    + " You only have ${self.player.wallet:.2f}."
+                )
+            return 0.0
         if self.player.is_human:
             try:
                 print(f"You have ${self.player.wallet:.2f} to play with")
@@ -35,7 +49,7 @@ class Game:
                 if bet < TABLE_MINIMUM:
                     print(
                         "Bet was smaller than table minimum. "
-                        + f"Betting ${min(TABLE_MINIMUM, self.player.wallet):.2f}"
+                        + f"Betting ${TABLE_MINIMUM:.2f}"
                     )
             except ValueError:
                 print(f"That entry wasn't valid. Betting ${bet:.2f}.")
@@ -74,11 +88,11 @@ class Game:
 
             self.dealer.deal_card(self.shoe.pop())
 
-    def print_hands(self, hand_name: str, show_scond_card: bool) -> None:
+    def print_hands(self, hand_name: str, show_second_card: bool) -> None:
         if self.player.is_human:
             hand = self.player.hands[hand_name]
             print(f"Your cards are: {[c.value + c.suit for c in hand]}")
-            if show_scond_card:
+            if show_second_card:
                 print(f"Dealer has {[c.value + c.suit for c in self.dealer.hand]}")
             else:
                 print(f"Dealer has a {self.dealer.hand[0]}")
@@ -115,30 +129,30 @@ class Game:
             self.print_hands(hand_name, False)
             print("Busted!")
 
-    def resolve_player_actions(self, hand_name: str, bet: float) -> Any:
-        winner: Any = None
+    def resolve_player_actions(self, hand_name: str, bet: float) -> str:
+        winner: str = ""
         playing = True
         while playing:
             action = self.get_action(hand_name)
             if action == "H":
                 self.player.deal_card(hand_name, self.shoe.pop())
                 if self.player.get_hard_score(hand_name) > 21:
-                    winner = self.dealer
+                    winner = "dealer"
                     playing = False
                     self.bust(hand_name)
 
             elif action == "D":
                 self.player.bet(bet)
                 bet *= 2
-                self.local_pots[hand_name] = bet
+                self.pots[hand_name] = bet
                 self.player.deal_card(hand_name, self.shoe.pop())
                 if self.player.get_hard_score(hand_name) > 21:
-                    winner = self.dealer
+                    winner = "dealer"
                     self.bust(hand_name)
                 playing = False
 
             elif action == "R":
-                winner = self.dealer
+                winner = "dealer"
                 playing = False
                 self.player.payout(0.5 * bet)
                 if self.player.is_human:
@@ -167,31 +181,31 @@ class Game:
                 self.print_hands(hand, True)
 
             if dealer_score == score:
-                self.player.payout(self.local_pots[hand])
+                self.player.payout(self.pots[hand])
                 if self.player.is_human:
                     print("PUSH!")
             elif dealer_score < score:
-                self.player.payout(2 * self.local_pots[hand])
+                self.player.payout(2 * self.pots[hand])
                 if self.player.is_human:
-                    print(f"You win ${self.local_pots[hand]:.2f}")
+                    print(f"You win ${self.pots[hand]:.2f}")
             else:
                 if self.player.is_human:
                     print("You lose! Better luck next time!")
 
-    def resolve_player_blackjack(self, bet: float) -> Any:
-        winner: Any = Player
+    def resolve_player_blackjack(self, bet: float) -> str:
+        winner: str = "player"
         winnings = bet * (BLACKJACK_PAYOUT + 1)
         self.player.payout(winnings)
         if self.player.is_human:
             print(f"You got blackjack! You win ${(bet * BLACKJACK_PAYOUT):.2f}")
         return winner
 
-    def resolve_insurance_scenario(self, bet: float) -> Any:
-        winner: Any = None
+    def resolve_insurance_scenario(self, bet: float) -> str:
+        winner: str = ""
         if SURRENDER == "early":
             do_surrender = self.get_early_surrender()
             if do_surrender == "Y":
-                winner = self.dealer
+                winner = "dealer"
                 self.player.payout(0.5 * bet)
                 if self.player.is_human:
                     print(f"You surrender. You recieve back ${(0.5 * bet):.2f}.")
@@ -199,7 +213,7 @@ class Game:
         insurance = self.get_insurance()
         if self.dealer.has_blackjack():
             self.print_hands(ORIGINAL_HAND, True)
-            winner = self.dealer
+            winner = "dealer"
             self.player.payout(2 * insurance)
             if self.player.is_human:
                 print("Dealer has Blackjack.")
@@ -213,14 +227,14 @@ class Game:
         card1 = self.player.hands[hand_name][0]
         card2 = self.player.hands[hand_name][1]
         self.player.hands.pop(hand_name)
-        self.local_pots.pop(hand_name)
+        self.pots.pop(hand_name)
         hand1_name = "Split " + str(uuid4())
         hand2_name = "Split " + str(uuid4())
         self.player.hands[hand1_name] = [card1]
         self.player.hands[hand2_name] = [card2]
 
-        self.local_pots[hand1_name] = bet
-        self.local_pots[hand2_name] = bet
+        self.pots[hand1_name] = bet
+        self.pots[hand2_name] = bet
 
         self.player.deal_card(hand1_name, self.shoe.pop())
         self.player.deal_card(hand2_name, self.shoe.pop())
@@ -236,10 +250,12 @@ class Game:
 
     def play(self) -> None:
 
-        winner = None
+        winner = ""
         bet: float = self.get_bet()
+        if bet <= 0:
+            return
 
-        self.local_pots[ORIGINAL_HAND] = bet
+        self.pots[ORIGINAL_HAND] = bet
 
         self.player.add_hand(ORIGINAL_HAND)
 
@@ -257,8 +273,8 @@ class Game:
         if self.dealer.hand[0].value == "A":
             winner = self.resolve_insurance_scenario(bet)
 
-        if winner is None:
+        if winner == "":
             winner = self.resolve_player_actions(ORIGINAL_HAND, bet)
 
-        if winner is None:
+        if winner == "":
             self.resolve_payouts()

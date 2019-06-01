@@ -1,5 +1,3 @@
-from typing import List
-
 from .card import Card
 from .constants import POINTS
 from .custom_types import Hand
