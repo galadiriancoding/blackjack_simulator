@@ -23,6 +23,10 @@ def main():
         if player.is_human:
             play_again = input("Do you wish to play again? y/N: ")[0].upper() == "Y"
 
+    if player.is_human:
+        print(f"You cash out with ${player.wallet:.2f}.")
+        print("Come back soon!")
+
 
 if __name__ == "__main__":
     main()

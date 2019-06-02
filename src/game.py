@@ -13,6 +13,7 @@ from .settings import (
     SURRENDER,
     TABLE_MAXIMUM,
     TABLE_MINIMUM,
+    RESPLIT_ACES,
 )
 
 
@@ -194,14 +195,23 @@ class Game:
 
     def resolve_player_blackjack(self, bet: float) -> str:
         winner: str = "player"
-        winnings = bet * (BLACKJACK_PAYOUT + 1)
-        self.player.payout(winnings)
-        if self.player.is_human:
-            print(f"You got blackjack! You win ${(bet * BLACKJACK_PAYOUT):.2f}")
+        if not self.dealer.has_blackjack:
+            winnings = bet * (BLACKJACK_PAYOUT + 1)
+            self.player.payout(winnings)
+            if self.player.is_human:
+                self.print_hands(ORIGINAL_HAND, False)
+                print(f"You got blackjack! You win ${(bet * BLACKJACK_PAYOUT):.2f}")
+        else:
+            self.player.payout(bet)
+            if self.player.is_human:
+                self.print_hands(ORIGINAL_HAND, True)
+                print("Both have Blackjack! Push!")
         return winner
 
     def resolve_insurance_scenario(self, bet: float) -> str:
         winner: str = ""
+        if self.player.is_human:
+            self.print_hands(ORIGINAL_HAND, False)
         if SURRENDER == "early":
             do_surrender = self.get_early_surrender()
             if do_surrender == "Y":
@@ -215,10 +225,14 @@ class Game:
             self.print_hands(ORIGINAL_HAND, True)
             winner = "dealer"
             self.player.payout(2 * insurance)
-            if self.player.is_human:
-                print("Dealer has Blackjack.")
-                if insurance > 0.0:
-                    print(f"You get ${insurance:.2f} from your insurance bet")
+            if not self.player.has_blackjack:
+                if self.player.is_human:
+                    print("Dealer has Blackjack.")
+            else:
+                self.player.payout(bet)
+                print("Both have Blackjack! Push!")
+            if insurance > 0.0:
+                print(f"You get ${insurance:.2f} from your insurance bet")
         return winner
 
     def play_split_game(self, bet: float, hand_name: str) -> None:
@@ -243,9 +257,9 @@ class Game:
             self.print_hands(hand1_name, False)
             self.print_hands(hand2_name, False)
 
-        if card1.value != "A":
+        if card1.value != "A" or RESPLIT_ACES:
             self.resolve_player_actions(hand1_name, bet)
-        if card2.value != "A":
+        if card2.value != "A" or RESPLIT_ACES:
             self.resolve_player_actions(hand2_name, bet)
 
     def play(self) -> None:
@@ -264,14 +278,11 @@ class Game:
         self.player.deal_card(ORIGINAL_HAND, self.shoe.pop())
         self.dealer.deal_card(self.shoe.pop())
 
-        if self.player.is_human:
-            self.print_hands(ORIGINAL_HAND, False)
-
-        if self.player.has_blackjack(ORIGINAL_HAND):
-            winner = self.resolve_player_blackjack(bet)
-
         if self.dealer.hand[0].value == "A":
             winner = self.resolve_insurance_scenario(bet)
+
+        if winner == "" and self.player.has_blackjack(ORIGINAL_HAND):
+            winner = self.resolve_player_blackjack(bet)
 
         if winner == "":
             winner = self.resolve_player_actions(ORIGINAL_HAND, bet)
