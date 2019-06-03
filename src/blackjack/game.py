@@ -74,10 +74,10 @@ class Game:
         self.player.bet(insurance)
         return insurance
 
-    def get_early_surrender(self) -> str:
-        surrender = "N"
+    def get_early_surrender(self) -> bool:
+        surrender = False
         if self.player.is_human:
-            surrender = input("Do you wish to surrender? y/N")[0].upper()
+            surrender = input("Do you wish to surrender? y/N")[0].upper() == "Y"
         else:
             surrender = self.ai.get_early_surrender(self.player, self.dealer)
         return surrender
@@ -225,7 +225,7 @@ class Game:
             self.print_hands(ORIGINAL_HAND, False)
         if SURRENDER == "early":
             do_surrender = self.get_early_surrender()
-            if do_surrender == "Y":
+            if do_surrender:
                 winner = "dealer"
                 self.player.payout(0.5 * bet)
                 if self.player.is_human:

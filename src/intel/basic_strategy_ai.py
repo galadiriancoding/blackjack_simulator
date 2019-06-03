@@ -27,8 +27,8 @@ class BasicStrategyAi(Ai):
         return 0.0
 
     @staticmethod
-    def get_early_surrender(player: Player, dealer: Dealer) -> str:
-        if (
+    def get_early_surrender(player: Player, dealer: Dealer) -> bool:
+        return (
             not player.contains_ace(ORIGINAL_HAND)
             and player.can_surrender(ORIGINAL_HAND)
             and (
@@ -47,9 +47,8 @@ class BasicStrategyAi(Ai):
                     and POINTS[dealer.hand[0].value] == 1
                 )
             )
-        ):
-            return "Y"
-        return "N"
+            # and False
+        )
 
     @staticmethod
     def evaluate_action_code(hand_name: str, action: str, player: Player) -> str:
@@ -86,7 +85,7 @@ class BasicStrategyAi(Ai):
 
         action: str = ""
 
-        dealer_card_value: str = dealer.hand[0].value
+        dealer_card_value: int = POINTS[dealer.hand[0].value]
         if player.can_split(hand_name):
             if HIT_ON_SOFT_17:
                 action = HIT_SPLIT_ACTIONS[(player_hard, dealer_card_value)]

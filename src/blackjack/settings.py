@@ -1,6 +1,6 @@
 DECK_COUNT: int = 8
 BLACKJACK_PAYOUT: float = 3.0 / 2.0
-SURRENDER: str = "late"
+SURRENDER: str = "early"
 HIT_ON_SOFT_17: bool = True
 DOUBLE_AFTER_SPLIT: bool = True
 RESPLIT_ACES: bool = False
@@ -13,7 +13,7 @@ DEFAULT_BET: float = 5.0
 DEFAULT_INSURANCE: float = 0.0
 
 SHOW_STATS: bool = True
-STARTING_WALLET: float = 1000000.0
+STARTING_WALLET: float = 100000.0
 MAX_PLAYS: int = 10000000
 
 HUMAN_PLAYER: bool = False

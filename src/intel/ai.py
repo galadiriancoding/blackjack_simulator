@@ -12,7 +12,7 @@ class Ai:
         raise NotImplementedError
 
     @staticmethod
-    def get_early_surrender(player: Player, dealer: Dealer) -> str:
+    def get_early_surrender(player: Player, dealer: Dealer) -> bool:
         raise NotImplementedError
 
     @staticmethod
