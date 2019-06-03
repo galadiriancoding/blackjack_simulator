@@ -5,6 +5,7 @@ from .constants import ORIGINAL_HAND
 from .custom_types import Deck
 from .dealer import Dealer
 from .player import Player
+from src.intel.ai import Ai
 from .settings import (
     BLACKJACK_PAYOUT,
     DEFAULT_BET,
@@ -18,13 +19,14 @@ from .settings import (
 
 
 class Game:
-    __slots__ = ["player", "dealer", "shoe", "pots"]
+    __slots__ = ["player", "dealer", "shoe", "pots", "ai"]
 
-    def __init__(self, player: Player, dealer: Dealer, shoe: Deck) -> None:
+    def __init__(self, player: Player, dealer: Dealer, shoe: Deck, ai: Ai) -> None:
         self.player: Player = player
         self.dealer: Dealer = dealer
         self.shoe: Deck = shoe
         self.pots: Dict[str, float] = {}
+        self.ai = ai
 
     def get_bet(self) -> float:
         bet = DEFAULT_BET
@@ -54,6 +56,8 @@ class Game:
                     )
             except ValueError:
                 print(f"That entry wasn't valid. Betting ${bet:.2f}.")
+        else:
+            bet = self.ai.get_bet(self.player, self.dealer)
         self.player.bet(bet)
         return bet
 
@@ -64,6 +68,8 @@ class Game:
                 insurance += float(input("Set your insurance bet: $"))
             except ValueError:
                 print("That entry wasn't valid. Refusing insurance")
+        else:
+            insurance = self.ai.get_insurance(self.player, self.dealer)
         self.player.bet(insurance)
         return insurance
 
@@ -71,6 +77,8 @@ class Game:
         surrender = "N"
         if self.player.is_human:
             surrender = input("Do you wish to surrender? y/N")[0].upper()
+        else:
+            surrender = self.ai.get_early_surrender(self.player, self.dealer)
         return surrender
 
     def play_dealer_and_get_score(self) -> int:
@@ -109,19 +117,21 @@ class Game:
             if self.player.can_surrender(hand_name):
                 options += " Su(R)render"
             options += ": "
-
             option = input(options)[0].upper()
-            if option in ["H", "S"]:
-                return option
-            if option == "D" and self.player.can_double(hand_name):
-                return option
-            if option == "P" and self.player.can_split(hand_name):
-                return option
-            if option == "R" and self.player.can_surrender(hand_name):
-                return option
-            else:
-                print("Invalid selection. Standing")
-                return "S"
+        else:
+            option = self.ai.get_action(hand_name, self.player, self.dealer)
+
+        if option in ["H", "S"]:
+            return option
+        if option == "D" and self.player.can_double(hand_name):
+            return option
+        if option == "P" and self.player.can_split(hand_name):
+            return option
+        if option == "R" and self.player.can_surrender(hand_name):
+            return option
+        else:
+            print("Invalid selection. Standing")
+            return "S"
 
         return "S"
 
@@ -230,9 +240,13 @@ class Game:
                     print("Dealer has Blackjack.")
             else:
                 self.player.payout(bet)
-                print("Both have Blackjack! Push!")
+                if self.player.is_human:
+                    print("Both have Blackjack! Push!")
             if insurance > 0.0:
                 print(f"You get ${insurance:.2f} from your insurance bet")
+        else:
+            if self.player.is_human and insurance > 0.0:
+                print("Dealer does not have blackjack. Insurance bet lost.")
         return winner
 
     def play_split_game(self, bet: float, hand_name: str) -> None:
@@ -262,12 +276,13 @@ class Game:
         if card2.value != "A" or RESPLIT_ACES:
             self.resolve_player_actions(hand2_name, bet)
 
-    def play(self) -> None:
+    def play(self) -> float:
+        initial_funds = self.player.wallet
 
         winner = ""
         bet: float = self.get_bet()
         if bet <= 0:
-            return
+            return 0.0
 
         self.pots[ORIGINAL_HAND] = bet
 
@@ -289,3 +304,7 @@ class Game:
 
         if winner == "":
             self.resolve_payouts()
+
+        final_funds = self.player.wallet
+
+        return final_funds - initial_funds

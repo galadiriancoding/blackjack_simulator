@@ -21,4 +21,4 @@ POINTS: Dict[str, int] = {
 
 ACTIONS: List[str] = ["hit", "stand", "double", "split", "surrender"]
 
-ORIGINAL_HAND = "original_hand"
+ORIGINAL_HAND: str = "original_hand"
