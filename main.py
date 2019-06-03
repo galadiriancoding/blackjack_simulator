@@ -2,9 +2,9 @@ from src.blackjack.custom_types import Deck
 from src.blackjack.dealer import Dealer
 from src.blackjack.game import Game
 from src.blackjack.player import Player
+from src.blackjack.settings import MAX_PLAYS, SHOW_STATS, STARTING_WALLET, TABLE_MINIMUM
 from src.blackjack.setup import build_shoe, discard_all_cards
 from src.intel.basic_strategy_ai import BasicStrategyAi
-from src.blackjack.settings import TABLE_MINIMUM, SHOW_STATS, STARTING_WALLET, MAX_PLAYS
 
 
 def main():

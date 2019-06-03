@@ -1,6 +1,9 @@
-from .ai import Ai
-from src.blackjack.player import Player
+from src.blackjack.constants import ORIGINAL_HAND
 from src.blackjack.dealer import Dealer
+from src.blackjack.player import Player
+from src.blackjack.settings import DOUBLE_AFTER_SPLIT, HIT_ON_SOFT_17, TABLE_MINIMUM
+
+from .ai import Ai
 from .basic_strategy_ai_actions import (
     HIT_HARD_ACTIONS,
     HIT_SOFT_ACTIONS,
@@ -9,7 +12,6 @@ from .basic_strategy_ai_actions import (
     STAND_SOFT_ACTIONS,
     STAND_SPLIT_ACTIONS,
 )
-from src.blackjack.settings import DOUBLE_AFTER_SPLIT, HIT_ON_SOFT_17, TABLE_MINIMUM
 
 
 class BasicStrategyAi(Ai):
@@ -27,7 +29,10 @@ class BasicStrategyAi(Ai):
     @staticmethod
     def get_early_surrender(player: Player, dealer: Dealer) -> str:
         if (
-            player.get_hard_score in [15, 16, 17]
+            (
+                player.get_hard_score(ORIGINAL_HAND) == 16
+                or (player.get_hard_score(ORIGINAL_HAND) in [15, 17] and HIT_ON_SOFT_17)
+            )
             and not player.contains_ace()
             and player.can_surrender()
             and dealer.hand[0].value == "A"

@@ -1,20 +1,21 @@
 from typing import Dict
 from uuid import uuid4
 
+from src.intel.ai import Ai
+
 from .constants import ORIGINAL_HAND
 from .custom_types import Deck
 from .dealer import Dealer
 from .player import Player
-from src.intel.ai import Ai
 from .settings import (
     BLACKJACK_PAYOUT,
     DEFAULT_BET,
     DEFAULT_INSURANCE,
     HIT_ON_SOFT_17,
+    RESPLIT_ACES,
     SURRENDER,
     TABLE_MAXIMUM,
     TABLE_MINIMUM,
-    RESPLIT_ACES,
 )
 
 
