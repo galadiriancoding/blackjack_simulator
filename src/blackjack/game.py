@@ -277,6 +277,9 @@ class Game:
         if card2.value != "A" or RESPLIT_ACES:
             self.resolve_player_actions(hand2_name, bet)
 
+        # if len(self.player.hands) >= 8:
+        #     print(f"Large Split: {len(self.player.hands)} hands")
+
     def play(self) -> float:
         initial_funds = self.player.wallet
 

@@ -2,22 +2,30 @@ from src.blackjack.custom_types import Deck
 from src.blackjack.dealer import Dealer
 from src.blackjack.game import Game
 from src.blackjack.player import Player
-from src.blackjack.settings import MAX_PLAYS, SHOW_STATS, STARTING_WALLET, TABLE_MINIMUM
+from src.blackjack.settings import (
+    HUMAN_PLAYER,
+    MAX_PLAYS,
+    SHOW_STATS,
+    STARTING_WALLET,
+    TABLE_MINIMUM,
+)
 from src.blackjack.setup import build_shoe, discard_all_cards
+from src.intel.ai import Ai
 from src.intel.basic_strategy_ai import BasicStrategyAi
 
 
 def main():
-    player: Player = Player(False, STARTING_WALLET)
+    player: Player = Player(HUMAN_PLAYER, STARTING_WALLET)
     dealer: Dealer = Dealer()
     shoe: Deck = build_shoe()
+    ai: Ai = BasicStrategyAi()
     discard_pile: Deck = []
     play_again: bool = True
     total_value: float = 0.0
     average_value: float = 0.0
     count: int = 0
     while play_again and player.wallet >= TABLE_MINIMUM and count < MAX_PLAYS:
-        game: Game = Game(player, dealer, shoe, BasicStrategyAi())
+        game: Game = Game(player, dealer, shoe, ai)
         value: float = game.play()
         total_value += value
         count += 1
