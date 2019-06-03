@@ -4,11 +4,11 @@ from src.blackjack.dealer import Dealer
 
 class Ai:
     @staticmethod
-    def get_bet() -> float:
+    def get_bet(player: Player, dealer: Dealer) -> float:
         raise NotImplementedError
 
     @staticmethod
-    def get_insurance() -> float:
+    def get_insurance(player: Player, dealer: Dealer) -> float:
         raise NotImplementedError
 
     @staticmethod

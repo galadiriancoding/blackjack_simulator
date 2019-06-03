@@ -21,7 +21,7 @@ def build_single_deck() -> Deck:
 def build_shoe() -> Deck:
     shoe: Deck = []
     for _ in range(DECK_COUNT):
-        deck = build_single_deck()
+        deck: Deck = build_single_deck()
         shoe.extend(deck)
     shuffle(shoe)
     return shoe
