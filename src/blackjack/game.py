@@ -231,23 +231,24 @@ class Game:
                 if self.player.is_human:
                     print(f"You surrender. You recieve back ${(0.5 * bet):.2f}.")
                 return winner
-        insurance = self.get_insurance()
-        if self.dealer.has_blackjack():
-            self.print_hands(ORIGINAL_HAND, True)
-            winner = "dealer"
-            self.player.payout(2 * insurance)
-            if not self.player.has_blackjack:
-                if self.player.is_human:
-                    print("Dealer has Blackjack.")
+        if self.dealer.hand[0].value == "A":
+            insurance = self.get_insurance()
+            if self.dealer.has_blackjack():
+                self.print_hands(ORIGINAL_HAND, True)
+                winner = "dealer"
+                self.player.payout(2 * insurance)
+                if not self.player.has_blackjack:
+                    if self.player.is_human:
+                        print("Dealer has Blackjack.")
+                else:
+                    self.player.payout(bet)
+                    if self.player.is_human:
+                        print("Both have Blackjack! Push!")
+                if insurance > 0.0:
+                    print(f"You get ${insurance:.2f} from your insurance bet")
             else:
-                self.player.payout(bet)
-                if self.player.is_human:
-                    print("Both have Blackjack! Push!")
-            if insurance > 0.0:
-                print(f"You get ${insurance:.2f} from your insurance bet")
-        else:
-            if self.player.is_human and insurance > 0.0:
-                print("Dealer does not have blackjack. Insurance bet lost.")
+                if self.player.is_human and insurance > 0.0:
+                    print("Dealer does not have blackjack. Insurance bet lost.")
         return winner
 
     def play_split_game(self, bet: float, hand_name: str) -> None:
@@ -297,7 +298,7 @@ class Game:
         self.player.deal_card(ORIGINAL_HAND, self.shoe.pop())
         self.dealer.deal_card(self.shoe.pop())
 
-        if self.dealer.hand[0].value == "A":
+        if self.dealer.hand[0].value in ["A", "T", "J", "Q", "K"]:
             winner = self.resolve_insurance_scenario(bet)
 
         if winner == "" and self.player.has_blackjack(ORIGINAL_HAND):

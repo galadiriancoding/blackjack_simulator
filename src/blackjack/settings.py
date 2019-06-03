@@ -12,7 +12,7 @@ TABLE_MAXIMUM: float = 10000.0
 DEFAULT_BET: float = 5.0
 DEFAULT_INSURANCE: float = 0.0
 
-SHOW_STATS: bool = False
+SHOW_STATS: bool = True
 STARTING_WALLET: float = 1000000.0
 MAX_PLAYS: int = 10000000
 

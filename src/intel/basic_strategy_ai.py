@@ -41,6 +41,11 @@ class BasicStrategyAi(Ai):
                     player.get_hard_score(ORIGINAL_HAND) in [14, 15, 16]
                     and POINTS[dealer.hand[0].value] == 10
                 )
+                or (
+                    player.get_hard_score(ORIGINAL_HAND) == 4
+                    and HIT_ON_SOFT_17
+                    and POINTS[dealer.hand[0].value] == 1
+                )
             )
         ):
             return "Y"
