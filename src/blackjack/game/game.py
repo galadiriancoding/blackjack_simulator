@@ -66,7 +66,7 @@ class Game:
         if self.player.is_human:
             try:
                 print(f"You have ${self.player.wallet:.2f} to play with")
-                bet = abs(float(input("Set your bet: $")))
+                bet = round(abs(float(input("Set your bet: $"))), 2)
                 if bet > self.player.wallet:
                     print("Bet was larger than your wallet. Betting whole wallet.")
                     bet = self.player.wallet
@@ -91,7 +91,7 @@ class Game:
         insurance: float = self.default_insurance
         if self.player.is_human:
             try:
-                insurance += float(input("Set your insurance bet: $"))
+                insurance += round(float(input("Set your insurance bet: $")), 2)
             except ValueError:
                 print("That entry wasn't valid. Refusing insurance")
         else:
@@ -102,7 +102,8 @@ class Game:
     def get_early_surrender(self) -> bool:
         surrender = False
         if self.player.is_human:
-            surrender = input("Do you wish to surrender? y/N")[0].upper() == "Y"
+            surrender_input = input("Do you wish to surrender? y/N")
+            surrender = len(surrender_input) > 0 and surrender_input[0].upper() == "Y"
         else:
             surrender = self.ai.get_early_surrender(self.player, self.dealer)
         return surrender
@@ -143,7 +144,8 @@ class Game:
             if self.player.can_surrender(hand_name):
                 options += " Su(R)render"
             options += ": "
-            option = input(options)[0].upper()
+            option_input = input(options)
+            option = option_input[0].upper() if len(option_input) else ""
         else:
             option = self.ai.get_action(hand_name, self.player, self.dealer)
 

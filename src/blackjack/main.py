@@ -42,7 +42,10 @@ def main():
                 + f"Average value per game: ${average_value:.10f}"
             )
         if player.is_human:
-            play_again = input("Do you wish to play again? y/N: ")[0].upper() == "Y"
+            play_again_input = input("Do you wish to play again? y/N: ")
+            play_again = (
+                len(play_again_input) > 0 and play_again_input[0].upper() == "Y"
+            )
 
     if player.is_human:
         print(f"You cash out with ${player.wallet:.2f}.")
