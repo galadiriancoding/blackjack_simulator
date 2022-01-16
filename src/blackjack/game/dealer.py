@@ -1,6 +1,7 @@
 from .card import Card
 from .constants import POINTS
 from .custom_types import Hand
+from .enums import Value
 
 
 class Dealer:
@@ -16,7 +17,7 @@ class Dealer:
         self.hand = []
 
     def contains_ace(self) -> bool:
-        return any(c.value == "A" for c in self.hand)
+        return any(c.value == Value.ACE for c in self.hand)
 
     def get_hard_score(self) -> int:
         hard_score = 0
@@ -38,5 +39,8 @@ class Dealer:
         return (
             len(self.hand) == 2
             and self.contains_ace()
-            and any(c.value in ["T", "J", "Q", "K"] for c in self.hand)
+            and any(
+                c.value in [Value.TEN, Value.JACK, Value.QUEEN, Value.KING]
+                for c in self.hand
+            )
         )

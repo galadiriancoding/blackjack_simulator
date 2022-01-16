@@ -1,18 +1,20 @@
-from typing import Dict
-
+from configparser import ConfigParser, SectionProxy
 from .card import Card
 from .constants import ORIGINAL_HAND, POINTS
 from .custom_types import Hand
-from .settings import DOUBLE_AFTER_SPLIT, SPLIT_LIMIT, SURRENDER
+from .enums import Value
 
 
 class Player:
-    __slots__ = ["hands", "is_human", "wallet"]
+    __slots__ = ["hands", "is_human", "wallet", "game_conf"]
 
-    def __init__(self, is_human: bool, wallet: float):
-        self.hands: Dict[str, Hand] = {}
-        self.is_human: bool = is_human
-        self.wallet: float = wallet
+    def __init__(self, config: ConfigParser):
+        self.hands: dict[str, Hand] = {}
+        self.is_human: bool = config["PLAYER"].getboolean("HUMAN_PLAYER", fallback=True)
+        self.wallet: float = config["PLAYER"].getfloat(
+            "STARTING_WALLET", fallback=100000.0
+        )
+        self.game_conf: SectionProxy = config["GAME"]
 
     def add_hand(self, hand_name: str) -> None:
         self.hands[hand_name] = []
@@ -31,7 +33,7 @@ class Player:
     def contains_ace(self, hand_name: str) -> bool:
         if not self.hands[hand_name]:
             return False
-        return any(c.value == "A" for c in self.hands[hand_name])
+        return any(c.value == Value.ACE for c in self.hands[hand_name])
 
     def get_hard_score(self, hand_name: str) -> int:
         if not self.hands[hand_name]:
@@ -67,23 +69,33 @@ class Player:
         return (
             len(self.hands[hand_name]) == 2
             and self.contains_ace(hand_name)
-            and any(c.value in ["T", "J", "Q", "K"] for c in self.hands[hand_name])
+            and any(
+                c.value in [Value.TEN, Value.JACK, Value.QUEEN, Value.KING]
+                for c in self.hands[hand_name]
+            )
         )
 
     def can_split(self, hand_name: str) -> bool:
         if not self.hands[hand_name]:
             return False
+        split_lint = self.game_conf.getint("SPLIT_LIMIT", fallback=0)
         return (
             len(self.hands[hand_name]) == 2
             and self.hands[hand_name][0].value == self.hands[hand_name][1].value
-            and (SPLIT_LIMIT == 0 or len(self.hands) <= SPLIT_LIMIT)
+            and (split_lint == 0 or len(self.hands) <= split_lint)
+            and (
+                hand_name == ORIGINAL_HAND
+                or self.game_conf.getboolean("RESPLIT_ACES", fallback=False)
+                or self.hands[hand_name][0].value != Value.ACE
+            )
         )
 
     def can_double(self, hand_name: str) -> bool:
         if not self.hands[hand_name]:
             return False
         return len(self.hands[hand_name]) == 2 and (
-            DOUBLE_AFTER_SPLIT or hand_name == ORIGINAL_HAND
+            self.game_conf.getboolean("DOUBLE_AFTER_SPLIT", fallback=True)
+            or hand_name == ORIGINAL_HAND
         )
 
     def can_surrender(self, hand_name: str) -> bool:
@@ -91,6 +103,6 @@ class Player:
             return False
         return (
             len(self.hands[hand_name]) == 2
-            and SURRENDER != "None"
+            and self.game_conf.get("SURRENDER", fallback="early") != "None"
             and hand_name == ORIGINAL_HAND
         )

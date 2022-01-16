@@ -1,6 +1,4 @@
-from typing import Dict, Tuple
-
-HIT_HARD_ACTIONS: Dict[Tuple[int, int], str] = {
+HIT_HARD_ACTIONS: dict[tuple[int, int], str] = {
     (4, 2): "H",
     (4, 3): "H",
     (4, 4): "H",
@@ -183,7 +181,7 @@ HIT_HARD_ACTIONS: Dict[Tuple[int, int], str] = {
     (21, 1): "S",
 }
 
-HIT_SOFT_ACTIONS: Dict[Tuple[int, int], str] = {
+HIT_SOFT_ACTIONS: dict[tuple[int, int], str] = {
     (13, 2): "H",
     (13, 3): "H",
     (13, 4): "H",
@@ -276,7 +274,7 @@ HIT_SOFT_ACTIONS: Dict[Tuple[int, int], str] = {
     (21, 1): "S",
 }
 
-HIT_SPLIT_ACTIONS: Dict[Tuple[int, int], str] = {
+HIT_SPLIT_ACTIONS: dict[tuple[int, int], str] = {
     (2, 2): "S",
     (2, 3): "S",
     (2, 4): "S",
@@ -379,7 +377,7 @@ HIT_SPLIT_ACTIONS: Dict[Tuple[int, int], str] = {
     (20, 1): "S",
 }
 
-STAND_HARD_ACTIONS: Dict[Tuple[int, int], str] = {
+STAND_HARD_ACTIONS: dict[tuple[int, int], str] = {
     (4, 2): "H",
     (4, 3): "H",
     (4, 4): "H",
@@ -562,7 +560,7 @@ STAND_HARD_ACTIONS: Dict[Tuple[int, int], str] = {
     (21, 1): "S",
 }
 
-STAND_SOFT_ACTIONS: Dict[Tuple[int, int], str] = {
+STAND_SOFT_ACTIONS: dict[tuple[int, int], str] = {
     (13, 2): "H",
     (13, 3): "H",
     (13, 4): "H",
@@ -655,7 +653,7 @@ STAND_SOFT_ACTIONS: Dict[Tuple[int, int], str] = {
     (21, 1): "S",
 }
 
-STAND_SPLIT_ACTIONS: Dict[Tuple[int, int], str] = {
+STAND_SPLIT_ACTIONS: dict[tuple[int, int], str] = {
     (2, 2): "S",
     (2, 3): "S",
     (2, 4): "S",

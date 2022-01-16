@@ -5,7 +5,6 @@ from .constants import SUITS, VALUES
 from .custom_types import Deck
 from .dealer import Dealer
 from .player import Player
-from .settings import DECK_COUNT
 
 
 def build_single_deck() -> Deck:
@@ -18,9 +17,9 @@ def build_single_deck() -> Deck:
     return deck
 
 
-def build_shoe() -> Deck:
+def build_shoe(deck_count: int) -> Deck:
     shoe: Deck = []
-    for _ in range(DECK_COUNT):
+    for _ in range(deck_count):
         deck: Deck = build_single_deck()
         shoe.extend(deck)
     shuffle(shoe)

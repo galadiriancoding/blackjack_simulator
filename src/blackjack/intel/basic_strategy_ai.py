@@ -1,7 +1,6 @@
-from src.blackjack.constants import ORIGINAL_HAND, POINTS
-from src.blackjack.dealer import Dealer
-from src.blackjack.player import Player
-from src.blackjack.settings import DOUBLE_AFTER_SPLIT, HIT_ON_SOFT_17, TABLE_MINIMUM
+from ..game.constants import ORIGINAL_HAND, POINTS
+from ..game.dealer import Dealer
+from ..game.player import Player
 
 from .ai import Ai
 from .basic_strategy_ai_actions import (
@@ -13,6 +12,8 @@ from .basic_strategy_ai_actions import (
     STAND_SPLIT_ACTIONS,
 )
 
+from ..config import Config
+
 
 class BasicStrategyAi(Ai):
     def __init__(self):
@@ -20,7 +21,7 @@ class BasicStrategyAi(Ai):
 
     @staticmethod
     def get_bet(player: Player, dealer: Dealer) -> float:
-        return TABLE_MINIMUM
+        return Config.config()["TABLE"].getfloat("TABLE_MINIMUM", fallback=10.0)
 
     @staticmethod
     def get_insurance(player: Player, dealer: Dealer) -> float:
@@ -43,7 +44,9 @@ class BasicStrategyAi(Ai):
                 )
                 or (
                     player.get_hard_score(ORIGINAL_HAND) == 4
-                    and HIT_ON_SOFT_17
+                    and Config.config()["GAME"].getboolean(
+                        "HIT_ON_SOFT_17", fallback=True
+                    )
                     and POINTS[dealer.hand[0].value] == 1
                 )
             )
@@ -67,7 +70,9 @@ class BasicStrategyAi(Ai):
                 return "P"
             return action[1].upper()
         if action in ["Lh", "Ls"]:
-            if player.can_split(hand_name) and DOUBLE_AFTER_SPLIT:
+            if player.can_split(hand_name) and Config.config()["GAME"].getboolean(
+                "DOUBLE_AFTER_SPLIT", fallback=True
+            ):
                 return "P"
             return action[1].upper()
         if action in ["Rph", "Rps"]:
@@ -84,20 +89,22 @@ class BasicStrategyAi(Ai):
         player_soft: int = player.get_soft_score(hand_name)
 
         action: str = ""
-
+        hit_on_soft_17: bool = Config.config()["GAME"].getboolean(
+            "HIT_ON_SOFT_17", fallback=True
+        )
         dealer_card_value: int = POINTS[dealer.hand[0].value]
         if player.can_split(hand_name):
-            if HIT_ON_SOFT_17:
+            if hit_on_soft_17:
                 action = HIT_SPLIT_ACTIONS[(player_hard, dealer_card_value)]
             else:
                 action = STAND_SPLIT_ACTIONS[(player_hard, dealer_card_value)]
         elif player.has_soft_score(hand_name):
-            if HIT_ON_SOFT_17:
+            if hit_on_soft_17:
                 action = HIT_SOFT_ACTIONS[(player_soft, dealer_card_value)]
             else:
                 action = STAND_SOFT_ACTIONS[(player_soft, dealer_card_value)]
         else:
-            if HIT_ON_SOFT_17:
+            if hit_on_soft_17:
                 action = HIT_HARD_ACTIONS[(player_hard, dealer_card_value)]
             else:
                 action = STAND_HARD_ACTIONS[(player_hard, dealer_card_value)]

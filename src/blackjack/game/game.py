@@ -1,40 +1,65 @@
-from typing import Dict
+from configparser import ConfigParser
 from uuid import uuid4
 
-from src.intel.ai import Ai
+from ..intel.ai import Ai
 
-from .constants import ORIGINAL_HAND
+from .constants import INSURANCE_PAYOUT, ORIGINAL_HAND
 from .custom_types import Deck
 from .dealer import Dealer
+from .enums import Value
 from .player import Player
-from .settings import (
-    BLACKJACK_PAYOUT,
-    DEFAULT_BET,
-    DEFAULT_INSURANCE,
-    HIT_ON_SOFT_17,
-    RESPLIT_ACES,
-    SURRENDER,
-    TABLE_MAXIMUM,
-    TABLE_MINIMUM,
-)
 
 
 class Game:
-    __slots__ = ["player", "dealer", "shoe", "pots", "ai"]
+    __slots__ = [
+        "player",
+        "dealer",
+        "shoe",
+        "pots",
+        "ai",
+        "default_bet",
+        "table_minimum",
+        "table_maximum",
+        "default_insurance",
+        "hit_on_soft_17",
+        "blackjack_payout",
+        "surrender",
+    ]
 
-    def __init__(self, player: Player, dealer: Dealer, shoe: Deck, ai: Ai) -> None:
+    def __init__(
+        self, player: Player, dealer: Dealer, shoe: Deck, ai: Ai, config: ConfigParser
+    ) -> None:
         self.player: Player = player
         self.dealer: Dealer = dealer
         self.shoe: Deck = shoe
-        self.pots: Dict[str, float] = {}
-        self.ai = ai
+        self.pots: dict[str, float] = {}
+        self.ai: Ai = ai
+        self.default_bet: float = config["PLAYER"].getfloat(
+            "DEFAULT_BET", fallback=10.0
+        )
+        self.table_minimum: float = config["TABLE"].getfloat(
+            "TABLE_MINIMUM", fallback=10.0
+        )
+        self.table_maximum: float = config["TABLE"].getfloat(
+            "TABLE_MAXIMUM", fallback=10.0
+        )
+        self.default_insurance: float = config["PLAYER"].getfloat(
+            "DEFAULT_INSURANCE", fallback=0
+        )
+        self.hit_on_soft_17: bool = config["GAME"].getboolean(
+            "HIT_ON_SOFT_17", fallback=True
+        )
+        self.blackjack_payout: float = config["GAME"].getfloat(
+            "BLACKJACK_PAYOUT", fallback=3.0 / 2.0
+        )
+        self.surrender: str = config["GAME"].get("SURRENDER", fallback="early")
 
     def get_bet(self) -> float:
-        bet = DEFAULT_BET
-        if self.player.wallet < TABLE_MINIMUM:
+        bet = self.default_bet
+        if self.player.wallet < self.table_minimum:
             if self.player.is_human:
                 print(
-                    f"I'm sorry you need at leats ${TABLE_MINIMUM:.2f} to play"
+                    f"I'm sorry you need at leats ${self.table_minimum:.2f} to play"
                     + " You only have ${self.player.wallet:.2f}."
                 )
             return 0.0
@@ -43,17 +68,17 @@ class Game:
                 print(f"You have ${self.player.wallet:.2f} to play with")
                 bet = abs(float(input("Set your bet: $")))
                 if bet > self.player.wallet:
-                    print(f"Bet was larger than your wallet. Betting whole wallet.")
+                    print("Bet was larger than your wallet. Betting whole wallet.")
                     bet = self.player.wallet
-                if bet > TABLE_MAXIMUM:
+                if bet > self.table_maximum:
                     print(
                         "Bet was larger than table maximum. "
-                        + f"Betting ${TABLE_MAXIMUM:.2f}"
+                        + f"Betting ${self.table_maximum:.2f}"
                     )
-                if bet < TABLE_MINIMUM:
+                if bet < self.table_minimum:
                     print(
                         "Bet was smaller than table minimum. "
-                        + f"Betting ${TABLE_MINIMUM:.2f}"
+                        + f"Betting ${self.table_minimum:.2f}"
                     )
             except ValueError:
                 print(f"That entry wasn't valid. Betting ${bet:.2f}.")
@@ -63,7 +88,7 @@ class Game:
         return bet
 
     def get_insurance(self) -> float:
-        insurance: float = DEFAULT_INSURANCE
+        insurance: float = self.default_insurance
         if self.player.is_human:
             try:
                 insurance += float(input("Set your insurance bet: $"))
@@ -91,7 +116,7 @@ class Game:
                 return 0
             if dealer_soft_score > 17:
                 return dealer_soft_score
-            if dealer_soft_score == 17 and not HIT_ON_SOFT_17:
+            if dealer_soft_score == 17 and not self.hit_on_soft_17:
                 return 17
             if dealer_hard_score >= 17:
                 return dealer_hard_score
@@ -133,8 +158,6 @@ class Game:
         else:
             print("Invalid selection. Standing")
             return "S"
-
-        return "S"
 
     def bust(self, hand_name: str) -> None:
         if self.player.is_human:
@@ -181,7 +204,7 @@ class Game:
 
     def resolve_payouts(self) -> None:
         dealer_score = self.play_dealer_and_get_score()
-        player_scores: Dict[str, int] = {}
+        player_scores: dict[str, int] = {}
         for hand in self.player.hands.keys():
             best_score = self.player.get_soft_score(hand)
             if best_score > 21:
@@ -207,11 +230,13 @@ class Game:
     def resolve_player_blackjack(self, bet: float) -> str:
         winner: str = "player"
         if not self.dealer.has_blackjack:
-            winnings = bet * (BLACKJACK_PAYOUT + 1)
+            winnings = bet * (self.blackjack_payout + 1)
             self.player.payout(winnings)
             if self.player.is_human:
                 self.print_hands(ORIGINAL_HAND, False)
-                print(f"You got blackjack! You win ${(bet * BLACKJACK_PAYOUT):.2f}")
+                print(
+                    f"You got blackjack! You win ${(bet * self.blackjack_payout):.2f}"
+                )
         else:
             self.player.payout(bet)
             if self.player.is_human:
@@ -223,7 +248,7 @@ class Game:
         winner: str = ""
         if self.player.is_human:
             self.print_hands(ORIGINAL_HAND, False)
-        if SURRENDER == "early":
+        if self.surrender == "early":
             do_surrender = self.get_early_surrender()
             if do_surrender:
                 winner = "dealer"
@@ -231,12 +256,12 @@ class Game:
                 if self.player.is_human:
                     print(f"You surrender. You recieve back ${(0.5 * bet):.2f}.")
                 return winner
-        if self.dealer.hand[0].value == "A":
+        if self.dealer.hand[0].value == Value.ACE:
             insurance = self.get_insurance()
             if self.dealer.has_blackjack():
                 self.print_hands(ORIGINAL_HAND, True)
                 winner = "dealer"
-                self.player.payout(2 * insurance)
+                self.player.payout(insurance * (INSURANCE_PAYOUT + 1))
                 if not self.player.has_blackjack:
                     if self.player.is_human:
                         print("Dealer has Blackjack.")
@@ -273,10 +298,8 @@ class Game:
             self.print_hands(hand1_name, False)
             self.print_hands(hand2_name, False)
 
-        if card1.value != "A" or RESPLIT_ACES:
-            self.resolve_player_actions(hand1_name, bet)
-        if card2.value != "A" or RESPLIT_ACES:
-            self.resolve_player_actions(hand2_name, bet)
+        self.resolve_player_actions(hand1_name, bet)
+        self.resolve_player_actions(hand2_name, bet)
 
         # if len(self.player.hands) >= 8:
         #     print(f"Large Split: {len(self.player.hands)} hands")
@@ -298,7 +321,13 @@ class Game:
         self.player.deal_card(ORIGINAL_HAND, self.shoe.pop())
         self.dealer.deal_card(self.shoe.pop())
 
-        if self.dealer.hand[0].value in ["A", "T", "J", "Q", "K"]:
+        if self.dealer.hand[0].value in [
+            Value.ACE,
+            Value.TEN,
+            Value.JACK,
+            Value.QUEEN,
+            Value.KING,
+        ]:
             winner = self.resolve_insurance_scenario(bet)
 
         if winner == "" and self.player.has_blackjack(ORIGINAL_HAND):

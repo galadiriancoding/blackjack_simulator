@@ -1,5 +1,5 @@
-from src.blackjack.dealer import Dealer
-from src.blackjack.player import Player
+from ..game.dealer import Dealer
+from ..game.player import Player
 
 
 class Ai:

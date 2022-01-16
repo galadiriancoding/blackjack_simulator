@@ -1,31 +1,30 @@
-from src.blackjack.custom_types import Deck
-from src.blackjack.dealer import Dealer
-from src.blackjack.game import Game
-from src.blackjack.player import Player
-from src.blackjack.settings import (
-    HUMAN_PLAYER,
-    MAX_PLAYS,
-    SHOW_STATS,
-    STARTING_WALLET,
-    TABLE_MINIMUM,
-)
-from src.blackjack.setup import build_shoe, discard_all_cards
-from src.intel.ai import Ai
-from src.intel.basic_strategy_ai import BasicStrategyAi
+from .game.custom_types import Deck
+from .game.dealer import Dealer
+from .game.game import Game
+from .game.player import Player
+from .game.setup import build_shoe, discard_all_cards
+from .intel.ai import Ai
+from .intel.basic_strategy_ai import BasicStrategyAi
+from .config import Config
 
 
 def main():
-    player: Player = Player(HUMAN_PLAYER, STARTING_WALLET)
+    config = Config.config()
+    player: Player = Player(config)
     dealer: Dealer = Dealer()
-    shoe: Deck = build_shoe()
+    shoe: Deck = build_shoe(config["TABLE"].getint("DECK_COUNT", fallback=8))
     ai: Ai = BasicStrategyAi()
     discard_pile: Deck = []
     play_again: bool = True
     total_value: float = 0.0
     average_value: float = 0.0
     count: int = 0
-    while play_again and player.wallet >= TABLE_MINIMUM and count < MAX_PLAYS:
-        game: Game = Game(player, dealer, shoe, ai)
+    while (
+        play_again
+        and player.wallet >= config["TABLE"].getfloat("TABLE_MINIMUM", fallback=10.0)
+        and count < config["TABLE"].getint("MAX_PLAYS", fallback=10000000)
+    ):
+        game: Game = Game(player, dealer, shoe, ai, config)
         value: float = game.play()
         total_value += value
         count += 1
@@ -35,8 +34,8 @@ def main():
             if player.is_human:
                 print("Re-shuffling shoe...")
             discard_pile = []
-            shoe = build_shoe()
-        if SHOW_STATS:
+            shoe = build_shoe(config["TABLE"].getint("DECK_COUNT", fallback=8))
+        if config["MISC"].getboolean("SHOW_STATS", fallback=True):
             print(f"Game value: ${value:.2f}. Total funds: ${player.wallet:.2f}")
             print(
                 f"Total Value: ${total_value:.2f}. "
