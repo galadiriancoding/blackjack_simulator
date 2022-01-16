@@ -60,7 +60,7 @@ class Game:
             if self.player.is_human:
                 print(
                     f"I'm sorry you need at leats ${self.table_minimum:.2f} to play"
-                    + " You only have ${self.player.wallet:.2f}."
+                    + f" You only have ${self.player.wallet:.2f}."
                 )
             return 0.0
         if self.player.is_human:
