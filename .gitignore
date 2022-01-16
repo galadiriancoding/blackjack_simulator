@@ -4,3 +4,4 @@ dist
 *.egg-info
 *.spec
 build
+*.ps1
