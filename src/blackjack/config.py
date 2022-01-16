@@ -10,7 +10,7 @@ class Config:
     def config() -> ConfigParser:
         if Config.__conf is None:
             Config.__conf = ConfigParser()
-            parser = ArgumentParser(prog="Blackjack Simulator")
+            parser = ArgumentParser(prog="blackjack-simulator")
             parser.add_argument(
                 "--config",
                 "-c",
